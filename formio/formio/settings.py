@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Retrieve the API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KE")
 
 
 from pathlib import Path

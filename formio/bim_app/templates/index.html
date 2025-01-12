@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form.io - BIM Viewer</title>
+    <title>BIM Viewer</title>
     <style>
         body {
             margin: 0;
@@ -36,6 +36,18 @@
             height: 100px;
             margin-bottom: 10px;
         }
+
+        pre#bimOutput {
+            width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
@@ -45,7 +57,7 @@
         <h2>BIM Generator</h2>
         <textarea id="prompt" placeholder="Describe your BIM requirements..."></textarea><br>
         <button id="generateBtn">Generate BIM</button>
-        <pre id="bimOutput"></pre>
+        <pre id="bimOutput">Output will appear here...</pre>
     </div>
 
     <script type="module">
@@ -88,7 +100,6 @@
             }
         }
 
-
         document.getElementById("generateBtn").addEventListener("click", async () => {
             const prompt = document.getElementById("prompt").value;
 
@@ -101,8 +112,7 @@
                 const response = await fetch("/generate_bim/", {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "X-CSRFToken": "{{ csrf_token }}" // For Django CSRF
+                        "Content-Type": "application/x-www-form-urlencoded"
                     },
                     body: new URLSearchParams({ prompt })
                 });
