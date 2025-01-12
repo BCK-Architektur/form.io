@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form.io - Generate BIM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <h1>Form.io - Generate BIM</h1>
+    <form id="bimForm">
+        <label for="prompt">Enter Prompt:</label><br>
+        <textarea id="prompt" name="prompt" rows="4" cols="50" placeholder="Describe your BIM requirements..."></textarea><br><br>
+        <button type="button" id="generateBtn">Generate BIM</button>
+    </form>
+
+    <div id="result">
+        <h2>BIM Data:</h2>
+        <pre id="bimOutput"></pre>
+    </div>
+
+    <script>
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const prompt = document.getElementById('prompt').value;
+            const response = await fetch('/generate_bim/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({ prompt })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById('bimOutput').textContent = JSON.stringify(data.bim_data, null, 2);
+            } else {
+                document.getElementById('bimOutput').textContent = `Error: ${data.error}`;
+            }
+        });
+    </script>
+</body>
+</html>
