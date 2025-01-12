@@ -3,40 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form.io - Generate BIM</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>Form.io - BIM Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            user-select: none;
+            font-family: Arial, sans-serif;
+        }
+
+        #xeokit_canvas {
+            width: 100%;
+            height: 80vh;
+            position: absolute;
+            background: lightblue;
+            background-image: linear-gradient(lightblue, white);
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 300px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Form.io - Generate BIM</h1>
-    <form id="bimForm">
-        <label for="prompt">Enter Prompt:</label><br>
-        <textarea id="prompt" name="prompt" rows="4" cols="50" placeholder="Describe your BIM requirements..."></textarea><br><br>
-        <button type="button" id="generateBtn">Generate BIM</button>
-    </form>
+    <canvas id="xeokit_canvas"></canvas>
 
-    <div id="result">
-        <h2>BIM Data:</h2>
+    <div id="controls">
+        <h2>BIM Generator</h2>
+        <textarea id="prompt" placeholder="Describe your BIM requirements..."></textarea><br>
+        <button id="generateBtn">Generate BIM</button>
         <pre id="bimOutput"></pre>
     </div>
 
-    <script>
-        document.getElementById('generateBtn').addEventListener('click', async () => {
-            const prompt = document.getElementById('prompt').value;
-            const response = await fetch('/generate_bim/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: new URLSearchParams({ prompt })
-            });
+    <script type="module">
+        import { XKTLoaderPlugin, Viewer } from "https://cdn.jsdelivr.net/npm/@xeokit/xeokit-sdk/dist/xeokit-sdk.es.min.js";
 
-            const data = await response.json();
-            if (response.ok) {
-                document.getElementById('bimOutput').textContent = JSON.stringify(data.bim_data, null, 2);
-            } else {
-                document.getElementById('bimOutput').textContent = `Error: ${data.error}`;
+        // Initialize the Viewer
+        const viewer = new Viewer({
+            canvasId: "xeokit_canvas",
+            transparent: true
+        });
+
+        viewer.camera.eye = [-3.933, 2.855, 27.018];
+        viewer.camera.look = [4.400, 3.724, 8.899];
+        viewer.camera.up = [-0.018, 0.999, 0.039];
+
+        // Initialize the XKTLoaderPlugin
+        const xktLoader = new XKTLoaderPlugin(viewer);
+
+        async function loadBIMModel(bimData) {
+            try {
+                // Parse the BIM data
+                const modelData = typeof bimData === "string" ? JSON.parse(bimData) : bimData;
+
+                if (!modelData.src) {
+                    throw new Error("Missing 'src' key in BIM data.");
+                }
+
+                // Load the BIM model into Xeokit Viewer
+                xktLoader.load({
+                    id: "dynamicModel",
+                    src: modelData.src,
+                    saoEnabled: true,
+                    edges: true
+                });
+
+                console.log("Model loaded successfully:", modelData);
+            } catch (e) {
+                console.error("Error loading BIM model:", e);
+                document.getElementById("bimOutput").textContent = "Error: Invalid BIM data.";
             }
+        }
+
+
+        document.getElementById("generateBtn").addEventListener("click", async () => {
+            const prompt = document.getElementById("prompt").value;
+
+            if (!prompt) {
+                alert("Please provide a prompt!");
+                return;
+            }
+
+            try {
+                const response = await fetch("/generate_bim/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}" // For Django CSRF
+                    },
+                    body: new URLSearchParams({ prompt })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById("bimOutput").textContent = JSON.stringify(data.bim_data, null, 2);
+                    loadBIMModel(data.bim_data); // Load BIM data dynamically
+                } else {
+                    document.getElementById("bimOutput").textContent = `Error: ${data.error}`;
+                }
+            } catch (e) {
+                console.error("Error generating BIM:", e);
+                document.getElementById("bimOutput").textContent = "Error generating BIM.";
+            }
+        });
+
+        // Load example model (Duplex.xkt)
+        xktLoader.load({
+            id: "exampleModel",
+            src: "https://xeokit.io/examples/models/xkt/duplex/dataset.xkt",
+            saoEnabled: true,
+            edges: true
         });
     </script>
 </body>
